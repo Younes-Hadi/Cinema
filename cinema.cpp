@@ -31,13 +31,125 @@ string action;
 class Movie
 {
 public:
+    Movie(string title="") : title(title) {}
+    string getTitle()
+    {
+        return title;
+    }
+
+private:
+    string title;
+};
+class Seat
+{
+public:
+    Seat(int row = 0, int number = 0, bool reserved = false) : row(row), number(number), reserved(reserved) {}
+    bool isReserved()
+    {
+        return reserved;
+    }
+    void reserve()
+    {
+        reserved = true;
+    }
+
+private:
+    int row, number;
+    bool reserved;
+};
+class ShowTime
+{
+private:
+    vector<string> time = {"08:00-10:00", "10:00-12:00", "12:00-14:00", "14:00-16:00", "16:00-18:00", "20:00-22:00"};
+    Movie movie;
+    vector<Seat> seat;
+};
+class Hall
+{
+protected:
+    vector<ShowTime> showTimes;
+
+public:
+    virtual int getPriceMultiplier() = 0;
+};
+class VIP_Hall : public Hall
+{
+public:
+    int getPriceMultiplier() override
+    {
+        return 2;
+    }
+};
+class ordinary_Hall : public Hall
+{
+public:
+    int getPriceMultiplier() override
+    {
+        return 1;
+    }
+};
+class Branch
+{
+public:
+    Branch(string title = "") : title(title) {}
+    string getTitle()
+    {
+        return title;
+    }
+
+private:
+    vector<Hall*> halls;
+    string title;
+};
+class Cinema
+{
+public:
+    void displayBranches()
+    {
+        cout << "Available branches:" << endl;
+        int i = 1;
+        for (auto b : branches)
+        {
+            cout << "\t" << i << ". " << b.getTitle() << endl;
+            i++;
+        }
+    }
+    void addBranch()
+    {
+        action = "";
+        cout << endl
+             << "Please enter a name for your new branch..." << endl;
+        string newBranch = "";
+        getline(cin, newBranch);
+        toLowerCase(newBranch);
+        navigationText(newBranch);
+        branches.push_back(newBranch);
+        system("cls");
+        moveCursor(42, 12);
+        cout << "New branch added to the list, successfully!" << endl;
+        Sleep(4000);
+        mainPanel();
+    }
+    void rmBranch()
+    {
+        cout << endl
+             << "Please enter the number of the branch that you want to remove..." << endl;
+        int remove;
+        cin >> remove;
+        branches.erase(branches.begin() + (remove - 1));
+        system("cls");
+        moveCursor(42, 12);
+        cout << "The selected branch removed successfully!" << endl;
+        Sleep(4000);
+        mainPanel();
+    }
     void displayMovies()
     {
         cout << "Available movies:" << endl;
         int i = 1;
-        for (string m : movies)
+        for (auto m : movies)
         {
-            cout << "\t" << i << ". " << m << endl;
+            cout << "\t" << i << ". " << m.getTitle() << endl;
             i++;
         }
     }
@@ -72,102 +184,33 @@ public:
     }
 
 private:
-    string title;
-    vector<string> movies = {"Backrooms", "The death of the Robin Hood", "Toy story", "Obsession", "Avengers doomsday", "Spider-Man brand new day", "The furious"};
-};
-class Seat
-{
-public:
-    Seat(int row = 0, int number = 0, bool reserved = false) : row(row), number(number), reserved(reserved) {}
-    bool isReserved()
-    {
-        return reserved;
-    }
-    void reserve()
-    {
-        reserved = true;
-    }
-
-private:
-    int row, number;
-    bool reserved;
-};
-class ShowTime
-{
-private:
-    vector<string> time = {"08:00-10:00", "10:00-12:00", "12:00-14:00", "14:00-16:00", "16:00-18:00", "20:00-22:00"};
-    Movie movie;
-    vector<Seat> seat;
-};
-class Hall
-{
-protected:
-    vector<ShowTime> showTimes;
-};
-class VIP_Hall : public Hall
-{
-public:
-    bool isVIP;
-};
-class Branch
-{
-private:
-    vector<Hall> halls;
-};
-class Cinema
-{
-public:
-    void displayBranches()
-    {
-        cout << "Available branches:" << endl;
-        int i = 1;
-        for (string b : branchesNames)
-        {
-            cout << "\t" << i << ". " << b << endl;
-            i++;
-        }
-    }
-    void addBranch()
-    {
-        action = "";
-        cout << endl
-             << "Please enter a name for your new branch..." << endl;
-        string newBranch = "";
-        getline(cin, newBranch);
-        toLowerCase(newBranch);
-        navigationText(newBranch);
-        branchesNames.push_back(newBranch);
-        system("cls");
-        moveCursor(42, 12);
-        cout << "New branch added to the list, successfully!" << endl;
-        Sleep(4000);
-        mainPanel();
-    }
-    void rmBranch()
-    {
-        cout << endl
-             << "Please enter the number of the branch that you want to remove..." << endl;
-        int remove;
-        cin >> remove;
-        branchesNames.erase(branchesNames.begin() + (remove - 1));
-        system("cls");
-        moveCursor(42, 12);
-        cout << "The selected branch removed successfully!" << endl;
-        Sleep(4000);
-        mainPanel();
-    }
-
-private:
-    vector<Branch> branches;
-    vector<string> branchesNames = {"Regal Times square", "AMC Lincoln square", "Roof Top Cinema Club Midtown", "AMC 84th Street 6", "Regal Battery Park", "AMC Empire 25", "AMC Village 7", "Angelika Film Cinema And Cofe", "IFC Center(Not ready yet)", "The Paris Theater", "Quad Cinema"};
+    vector<Movie> movies{
+        {"Backrooms"},
+        {"The death of the Robin Hood"},
+        {"Toy story"},
+        {"Obsession"},
+        {"Avengers doomsday"},
+        {"Spider-Man brand new day"},
+        {"The furious"}};
+    vector<Branch> branches{
+        {"Regal Times Square"},
+        {"AMC Lincoln Square"},
+        {"AMC Empire 25"},
+        {"The Paris Theater"}};
 };
 class Reserving
 {
+public:
+    void reserving()
+    {
+    }
+
 private:
-    Movie movies;
+    Movie movie;
     vector<Seat> seats;
     ShowTime times;
     string costumerName;
+    Cinema cinema;
 };
 class Ticket
 {
@@ -216,7 +259,6 @@ private:
 
 /// VARIABLES:...
 User *currentUser = nullptr;
-Movie appMovies;
 Cinema appCinema;
 
 User *loginPanel();
@@ -290,7 +332,7 @@ void reserve()
 void moviesDetails()
 {
     system("cls");
-    appMovies.displayMovies();
+    appCinema.displayMovies();
     action = "";
     cout << "If you want to add or remove a movie, please type 'add' or 'delete'... " << endl;
     while (true)
@@ -300,12 +342,12 @@ void moviesDetails()
         navigationText(action);
         if (action == "add")
         {
-            appMovies.addMovie();
+            appCinema.addMovie();
             break;
         }
         else if (action == "delete")
         {
-            appMovies.rmMovie();
+            appCinema.rmMovie();
             break;
         }
         else
@@ -384,7 +426,6 @@ User *loginPanel()
             moveCursor(35, 11);
             cout << "Please enter a valid username or password...";
             Sleep(4000);
-            loginPanel();
         }
     }
 }
@@ -400,7 +441,7 @@ bool navigationText(string text)
     else if (text == "logout")
     {
         delete currentUser;
-        loginPanel();
+        currentUser = loginPanel();
         return true;
     }
     else if (text == "back")
