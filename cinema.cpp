@@ -38,10 +38,9 @@ public:
     {
         return title;
     }
-    string setTitle(string name)
+    void setTitle(string name)
     {
         title = name;
-        return title;
     }
 
 private:
@@ -84,6 +83,7 @@ private:
 class Hall
 {
 public:
+    virtual ~Hall() = default;
     virtual int getPriceMultiplier() = 0;
     void displayTime()
     {
@@ -95,7 +95,7 @@ public:
             i++;
         }
     }
-    ShowTime getTime(int index)
+    const ShowTime &getTime(int index)
     {
         return times[index];
     }
@@ -126,6 +126,14 @@ public:
     {
         return seats[index];
     }
+    int timesCount()
+    {
+        return times.size();
+    }
+    int seatsCount()
+    {
+        return seats.size();
+    }
 
 protected:
     vector<ShowTime> times{
@@ -138,7 +146,7 @@ protected:
     vector<Seat> seats{
         {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}};
 };
-class VIP_Hall : public Hall
+class VIPHall : public Hall
 {
 public:
     int getPriceMultiplier() override
@@ -146,7 +154,7 @@ public:
         return 2;
     }
 };
-class ordinary_Hall : public Hall
+class OrdinaryHall : public Hall
 {
 public:
     int getPriceMultiplier() override
@@ -157,19 +165,19 @@ public:
 class Branch
 {
 public:
+
     Branch(string title = "") : title(title)
     {
-        halls.push_back(new ordinary_Hall);
-        halls.push_back(new VIP_Hall);
+        halls.push_back(new OrdinaryHall);
+        halls.push_back(new VIPHall);
     }
     string getTitle()
     {
         return title;
     }
-    string setTitle(string name)
+    void setTitle(string name)
     {
         title = name;
-        return title;
     }
     Hall *getHall(int index)
     {
@@ -207,7 +215,6 @@ public:
         moveCursor(42, 12);
         cout << "New branch added to the list, successfully!" << endl;
         Sleep(4000);
-        mainPanel();
     }
     void rmBranch()
     {
@@ -227,7 +234,6 @@ public:
         moveCursor(42, 12);
         cout << "The selected branch removed successfully!" << endl;
         Sleep(4000);
-        mainPanel();
     }
     void displayMovies()
     {
@@ -253,7 +259,6 @@ public:
         moveCursor(42, 12);
         cout << "New movie added to the list, successfully!" << endl;
         Sleep(4000);
-        mainPanel();
     }
     void rmMovie()
     {
@@ -273,15 +278,22 @@ public:
         moveCursor(42, 12);
         cout << "The selected movie removed successfully!" << endl;
         Sleep(4000);
-        mainPanel();
     }
-    Movie getMovie(int index)
+    const Movie &getMovie(int index)
     {
         return movies[index];
     }
     Branch &getBranch(int index)
     {
         return branches[index];
+    }
+    int moviesCount()
+    {
+        return movies.size();
+    }
+    int branchesCount()
+    {
+        return branches.size();
     }
 
 private:
@@ -307,23 +319,36 @@ public:
     void chooseMovie()
     {
         system("cls");
-        appCinema.displayMovies();
 
-        cout << "Please enter the number of the movie that you want to choose..." << endl;
         int n;
-        cin >> n;
+        while (true)
+        {
+            appCinema.displayMovies();
+            cout << "Please enter the number of the movie that you want to choose..." << endl;
+            cin >> n;
+            if (n < 1 || n > appCinema.moviesCount())
+                invalidNumber();
+            else
+                break;
+        }
 
         movie = appCinema.getMovie(n - 1);
     }
     void chooseBranch()
     {
         system("cls");
-        appCinema.displayBranches();
-
-        cout << "Please enter the number of the branch that you want to choose..." << endl;
 
         int n;
-        cin >> n;
+        while (true)
+        {
+            appCinema.displayBranches();
+            cout << "Please enter the number of the branch that you want to choose..." << endl;
+            cin >> n;
+            if (n < 1 || n > appCinema.branchesCount())
+                invalidNumber();
+            else
+                break;
+        }
 
         branch = &appCinema.getBranch(n - 1);
     }
@@ -331,34 +356,67 @@ public:
     {
         system("cls");
         int n;
-        cout << "1. Ordinary\n2. VIP\n";
-        cin >> n;
+        while (true)
+        {
+            cout << "1. Ordinary\n2. VIP\n";
+            cin >> n;
+            if (n < 1 || n > 2)
+                invalidNumber();
+            else
+                break;
+        }
         hall = branch->getHall(n - 1);
     }
     void chooseTime()
     {
         system("cls");
-        hall->displayTime();
-        cout << "Please enter the number of the time that you want to choose..." << endl;
         int n;
-        cin >> n;
+        while (true)
+        {
+            hall->displayTime();
+            cout << "Please enter the number of the time that you want to choose..." << endl;
+            cin >> n;
+            if (n < 1 || n > hall->timesCount())
+                invalidNumber();
+            else
+                break;
+        }
         time = hall->getTime(n - 1);
     }
     void chooseSeat()
     {
         system("cls");
-        hall->displaySeats();
-        cout << "Please enter the number of the seat that you want to choose..." << endl;
         int n;
-        cin >> n;
-        seat = &hall->getSeat(n - 1);
+        while (true)
+        {
+            while (true)
+            {
+                hall->displaySeats();
+                cout << "Please enter the number of the seat that you want to choose..." << endl;
+                cin >> n;
+                if (n < 1 || n > hall->seatsCount())
+                    invalidNumber();
+                break;
+            }
+            seat = &hall->getSeat(n - 1);
+            if (seat->reserveStatus())
+            {
+                system("cls");
+                moveCursor(35, 11);
+                cout << "This seat is already reserved!" << endl;
+                Sleep(3000);
+                system("cls");
+                continue;
+            }
+            break;
+        }
         seat->reserve();
     }
     void enterName()
     {
         cout << "Please enter your first and last name: ";
         cin.ignore();
-        getline(cin, costumerName);
+        getline(cin, customerName);
     }
     void calculatePrice()
     {
@@ -379,7 +437,6 @@ public:
         moveCursor(35, 11);
         cout << "Reservation complete successfully!" << endl;
         Sleep(4000);
-        mainPanel();
     }
 
 private:
@@ -388,20 +445,20 @@ private:
     ShowTime time;
     Branch *branch;
     Hall *hall = nullptr;
-    string costumerName;
+    string customerName;
     int price;
 };
-class Ticket
-{
-private:
-    Movie movie;
-    vector<Seat> seat;
-    ShowTime time;
-    Branch branch;
-    int price;
-    string clientsName;
-    string clientsLastName;
-};
+// class Ticket
+// {
+// private:
+//     Movie movie;
+//     vector<Seat> seat;
+//     ShowTime time;
+//     Branch branch;
+//     int price;
+//     string clientsName;
+//     string clientsLastName;
+// };
 class User
 {
 protected:
@@ -416,24 +473,16 @@ class Admin : public User
 public:
     bool checkIsAdmin() override
     {
-        isAdmin = true;
-        return isAdmin;
+        return true;
     }
-
-private:
-    bool isAdmin;
 };
-class Costumer : public User
+class Customer : public User
 {
 public:
     bool checkIsAdmin() override
     {
-        isAdmin = false;
-        return isAdmin;
+        return false;
     }
-
-private:
-    bool isAdmin;
 };
 
 /// VARIABLES:...
@@ -450,23 +499,25 @@ int main()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void mainPanel()
 {
-    navbarPack();
-    moveCursor(42, 7);
-    cout << "Welcome" << endl;
-    moveCursor(1, 15);
-    cout << "Please enter an action to do..." << endl;
-    handleAction();
+    while (true)
+    {
+        navbarPack();
+        moveCursor(42, 7);
+        cout << "Welcome" << endl;
+        moveCursor(1, 15);
+        cout << "Please enter an action to do..." << endl;
+        handleAction();
+    }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void handleAction()
 {
     getline(cin, action);
     toLowerCase(action);
-    navigationText(action);
     if (navigationText(action))
         return;
     else if (action == "1" || action == "home")
-        mainPanel();
+        return;
     else if (((action == "2" || action == "reserve") && !(currentUser->checkIsAdmin())))
         reserve();
     else if (((action == "3" || action == "contact us") && !(currentUser->checkIsAdmin())) || ((currentUser->checkIsAdmin()) && (action == "4" || action == "contact us")))
@@ -521,7 +572,8 @@ void moviesDetails()
     {
         getline(cin, action);
         toLowerCase(action);
-        navigationText(action);
+        if (navigationText(action))
+            return;
         if (action == "add")
         {
             appCinema.addMovie();
@@ -570,13 +622,11 @@ void contactUs()
     moveCursor(35, 11);
     cout << "Please contact with youneshadi07@gmail.com, in email!" << endl;
     Sleep(5000);
-    mainPanel();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 User *loginPanel()
 {
     string username, pass;
-    bool valid = false;
     string situation = "login";
     while (true)
     {
@@ -595,12 +645,10 @@ User *loginPanel()
             }
             else if (username == "c")
             {
-                return new Costumer();
+                return new Customer();
             }
             else
                 unknownError(situation);
-            valid = true;
-            mainPanel();
         }
         else
         {
@@ -628,8 +676,6 @@ bool navigationText(string text)
     }
     else if (text == "back")
     {
-        text = "";
-        mainPanel();
         return true;
     }
     return false;
@@ -660,7 +706,6 @@ void unknownError(string situation)
     moveCursor(35, 11);
     cout << "An unknown error caused in " << situation << "  checking, please try again later..." << endl;
     Sleep(4000);
-    mainPanel();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void invalidNumber()
@@ -678,7 +723,6 @@ void invalid()
     moveCursor(35, 11);
     cout << "Please enter a valid action..." << endl;
     Sleep(3000);
-    mainPanel();
 }
 void loginInput()
 {
