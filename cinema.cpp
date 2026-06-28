@@ -5,6 +5,7 @@
 #include <windows.h>
 #include <string>
 #include <cctype>
+#include <memory>
 
 /// NAMESPACE:...
 using namespace std;
@@ -14,6 +15,7 @@ void navbarPack();
 void handleAction();
 void toLowerCase(string &);
 void invalid();
+void invalidNumber();
 void unknownError(string);
 bool navigationText(string);
 void moveCursor(int, int);
@@ -31,46 +33,110 @@ string action;
 class Movie
 {
 public:
-    Movie(string title="") : title(title) {}
+    Movie(string title = "", int number = 0) : title(title), number(number) {}
     string getTitle()
     {
+        return title;
+    }
+    string setTitle(string name)
+    {
+        title = name;
         return title;
     }
 
 private:
     string title;
+    int number;
 };
 class Seat
 {
 public:
-    Seat(int row = 0, int number = 0, bool reserved = false) : row(row), number(number), reserved(reserved) {}
-    bool isReserved()
-    {
-        return reserved;
-    }
+    Seat(int number = 0, bool reserved = false) : number(number), reserved(reserved) {}
     void reserve()
     {
         reserved = true;
     }
+    bool reserveStatus()
+    {
+        return reserved;
+    }
+    int getSeats()
+    {
+        return number;
+    }
 
 private:
-    int row, number;
+    int number;
     bool reserved;
 };
 class ShowTime
 {
+public:
+    ShowTime(string time = "") : time(time) {}
+    string getTime() const
+    {
+        return time;
+    }
+
 private:
-    vector<string> time = {"08:00-10:00", "10:00-12:00", "12:00-14:00", "14:00-16:00", "16:00-18:00", "20:00-22:00"};
-    Movie movie;
-    vector<Seat> seat;
+    string time;
 };
 class Hall
 {
-protected:
-    vector<ShowTime> showTimes;
-
 public:
     virtual int getPriceMultiplier() = 0;
+    void displayTime()
+    {
+        cout << "Available times:" << endl;
+        int i = 1;
+        for (const auto &t : times)
+        {
+            cout << "\t" << i << ". " << t.getTime() << endl;
+            i++;
+        }
+    }
+    ShowTime getTime(int index)
+    {
+        return times[index];
+    }
+    void displaySeats()
+    {
+        cout << "Available seats: (The 'X' means that the seat has already reserved!)" << endl;
+        int i = 0;
+        for (auto s : seats)
+        {
+            if (i % 5 == 0)
+                cout << endl
+                     << "\t";
+            if (s.reserveStatus())
+            {
+                cout << " X" << "   ";
+                i++;
+                if (i == 15)
+                    cout << endl;
+                continue;
+            }
+            cout << s.getSeats() << "   ";
+            i++;
+            if (i == 15)
+                cout << endl;
+        }
+    }
+    Seat &getSeat(int index)
+    {
+        return seats[index];
+    }
+
+protected:
+    vector<ShowTime> times{
+        {"08:00-10:00"},
+        {"10:00-12:00"},
+        {"12:00-14:00"},
+        {"14:00-16:00"},
+        {"16:00-18:00"},
+        {"20:00-22:00"}};
+    vector<Seat> seats{
+        {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}};
 };
 class VIP_Hall : public Hall
 {
@@ -91,14 +157,27 @@ public:
 class Branch
 {
 public:
-    Branch(string title = "") : title(title) {}
+    Branch(string title = "") : title(title)
+    {
+        halls.push_back(new ordinary_Hall);
+        halls.push_back(new VIP_Hall);
+    }
     string getTitle()
     {
         return title;
     }
+    string setTitle(string name)
+    {
+        title = name;
+        return title;
+    }
+    Hall *getHall(int index)
+    {
+        return halls[index];
+    }
 
 private:
-    vector<Hall*> halls;
+    vector<Hall *> halls;
     string title;
 };
 class Cinema
@@ -132,10 +211,17 @@ public:
     }
     void rmBranch()
     {
-        cout << endl
-             << "Please enter the number of the branch that you want to remove..." << endl;
         int remove;
-        cin >> remove;
+        while (true)
+        {
+            cout << endl
+                 << "Please enter the number of the branch that you want to remove..." << endl;
+            cin >> remove;
+            if (remove < 1 || remove > branches.size())
+                invalidNumber();
+            else if (remove <= branches.size() && remove > 0)
+                break;
+        }
         branches.erase(branches.begin() + (remove - 1));
         system("cls");
         moveCursor(42, 12);
@@ -171,16 +257,31 @@ public:
     }
     void rmMovie()
     {
-        cout << endl
-             << "Please enter the number of the movie that you want to remove..." << endl;
         int remove;
-        cin >> remove;
+        while (true)
+        {
+            cout << endl
+                 << "Please enter the number of the movie that you want to remove..." << endl;
+            cin >> remove;
+            if (remove < 1 || remove > movies.size())
+                invalidNumber();
+            else if (remove <= movies.size() && remove > 0)
+                break;
+        }
         movies.erase(movies.begin() + (remove - 1));
         system("cls");
         moveCursor(42, 12);
         cout << "The selected movie removed successfully!" << endl;
         Sleep(4000);
         mainPanel();
+    }
+    Movie getMovie(int index)
+    {
+        return movies[index];
+    }
+    Branch &getBranch(int index)
+    {
+        return branches[index];
     }
 
 private:
@@ -198,19 +299,97 @@ private:
         {"AMC Empire 25"},
         {"The Paris Theater"}};
 };
-class Reserving
+Cinema appCinema;
+class Reservation
 {
 public:
-    void reserving()
+    Reservation(int price = 10) : price(price) {}
+    void chooseMovie()
     {
+        system("cls");
+        appCinema.displayMovies();
+
+        cout << "Please enter the number of the movie that you want to choose..." << endl;
+        int n;
+        cin >> n;
+
+        movie = appCinema.getMovie(n - 1);
+    }
+    void chooseBranch()
+    {
+        system("cls");
+        appCinema.displayBranches();
+
+        cout << "Please enter the number of the branch that you want to choose..." << endl;
+
+        int n;
+        cin >> n;
+
+        branch = &appCinema.getBranch(n - 1);
+    }
+    void chooseHall()
+    {
+        system("cls");
+        int n;
+        cout << "1. Ordinary\n2. VIP\n";
+        cin >> n;
+        hall = branch->getHall(n - 1);
+    }
+    void chooseTime()
+    {
+        system("cls");
+        hall->displayTime();
+        cout << "Please enter the number of the time that you want to choose..." << endl;
+        int n;
+        cin >> n;
+        time = hall->getTime(n - 1);
+    }
+    void chooseSeat()
+    {
+        system("cls");
+        hall->displaySeats();
+        cout << "Please enter the number of the seat that you want to choose..." << endl;
+        int n;
+        cin >> n;
+        seat = &hall->getSeat(n - 1);
+        seat->reserve();
+    }
+    void enterName()
+    {
+        cout << "Please enter your first and last name: ";
+        cin.ignore();
+        getline(cin, costumerName);
+    }
+    void calculatePrice()
+    {
+        price *= hall->getPriceMultiplier();
+        cout << "Total price: " << price << "$" << endl;
+    }
+    void reservingFlow()
+    {
+        chooseBranch();
+        chooseMovie();
+        chooseHall();
+        chooseTime();
+        chooseSeat();
+        enterName();
+        calculatePrice();
+        Sleep(4000);
+        system("cls");
+        moveCursor(35, 11);
+        cout << "Reservation complete successfully!" << endl;
+        Sleep(4000);
+        mainPanel();
     }
 
 private:
     Movie movie;
-    vector<Seat> seats;
-    ShowTime times;
+    Seat *seat = nullptr;
+    ShowTime time;
+    Branch *branch;
+    Hall *hall = nullptr;
     string costumerName;
-    Cinema cinema;
+    int price;
 };
 class Ticket
 {
@@ -244,7 +423,7 @@ public:
 private:
     bool isAdmin;
 };
-class Customer : public User
+class Costumer : public User
 {
 public:
     bool checkIsAdmin() override
@@ -259,7 +438,7 @@ private:
 
 /// VARIABLES:...
 User *currentUser = nullptr;
-Cinema appCinema;
+vector<Reservation> currentReserve;
 
 User *loginPanel();
 
@@ -327,6 +506,9 @@ void navbarPack()
 void reserve()
 {
     action = "";
+    Reservation thisReserve;
+    thisReserve.reservingFlow();
+    currentReserve.push_back(thisReserve);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void moviesDetails()
@@ -413,7 +595,7 @@ User *loginPanel()
             }
             else if (username == "c")
             {
-                return new Customer();
+                return new Costumer();
             }
             else
                 unknownError(situation);
@@ -479,6 +661,15 @@ void unknownError(string situation)
     cout << "An unknown error caused in " << situation << "  checking, please try again later..." << endl;
     Sleep(4000);
     mainPanel();
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void invalidNumber()
+{
+    system("cls");
+    moveCursor(35, 11);
+    cout << "Please enter a valid number..." << endl;
+    Sleep(3000);
+    system("cls");
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void invalid()
