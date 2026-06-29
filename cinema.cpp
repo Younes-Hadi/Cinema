@@ -6,6 +6,8 @@
 #include <string>
 #include <cctype>
 #include <memory>
+#include <fstream>
+#include <iomanip>
 
 /// NAMESPACE:...
 using namespace std;
@@ -16,6 +18,7 @@ void handleAction();
 void toLowerCase(string &);
 void invalid();
 void invalidNumber();
+void line();
 void unknownError(string);
 bool navigationText(string);
 void moveCursor(int, int);
@@ -30,11 +33,17 @@ void loginInput();
 string action;
 
 /// CLASSES:...
+class Database
+{
+public:
+    static void save();
+    static void load();
+};
 class Movie
 {
 public:
     Movie(string title = "", int number = 0) : title(title), number(number) {}
-    string getTitle()
+    string getTitle() const
     {
         return title;
     }
@@ -55,11 +64,11 @@ public:
     {
         reserved = true;
     }
-    bool reserveStatus()
+    bool reserveStatus() const
     {
         return reserved;
     }
-    int getSeats()
+    int getSeats() const
     {
         return number;
     }
@@ -75,29 +84,6 @@ public:
     string getTime() const
     {
         return time;
-    }
-
-private:
-    string time;
-};
-class Hall
-{
-public:
-    virtual ~Hall() = default;
-    virtual int getPriceMultiplier() = 0;
-    void displayTime()
-    {
-        cout << "Available times:" << endl;
-        int i = 1;
-        for (const auto &t : times)
-        {
-            cout << "\t" << i << ". " << t.getTime() << endl;
-            i++;
-        }
-    }
-    const ShowTime &getTime(int index)
-    {
-        return times[index];
     }
     void displaySeats()
     {
@@ -126,13 +112,39 @@ public:
     {
         return seats[index];
     }
-    int timesCount()
-    {
-        return times.size();
-    }
     int seatsCount()
     {
         return seats.size();
+    }
+
+private:
+    string time;
+    vector<Seat> seats{
+        {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}};
+};
+class Hall
+{
+public:
+    virtual ~Hall() = default;
+    virtual int getPriceMultiplier() = 0;
+    virtual string getHallType() = 0;
+    void displayTime()
+    {
+        cout << "Available times:" << endl;
+        int i = 1;
+        for (const auto &t : times)
+        {
+            cout << "\t" << i << ". " << t.getTime() << endl;
+            i++;
+        }
+    }
+    ShowTime &getTime(int index)
+    {
+        return times[index];
+    }
+    int timesCount()
+    {
+        return times.size();
     }
 
 protected:
@@ -143,8 +155,6 @@ protected:
         {"14:00-16:00"},
         {"16:00-18:00"},
         {"20:00-22:00"}};
-    vector<Seat> seats{
-        {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}};
 };
 class VIPHall : public Hall
 {
@@ -152,6 +162,10 @@ public:
     int getPriceMultiplier() override
     {
         return 2;
+    }
+    string getHallType() override
+    {
+        return "VIP";
     }
 };
 class OrdinaryHall : public Hall
@@ -161,17 +175,20 @@ public:
     {
         return 1;
     }
+    string getHallType() override
+    {
+        return "Ordinary";
+    }
 };
 class Branch
 {
 public:
-
     Branch(string title = "") : title(title)
     {
         halls.push_back(new OrdinaryHall);
         halls.push_back(new VIPHall);
     }
-    string getTitle()
+    string getTitle() const
     {
         return title;
     }
@@ -224,6 +241,8 @@ public:
             cout << endl
                  << "Please enter the number of the branch that you want to remove..." << endl;
             cin >> remove;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
             if (remove < 1 || remove > branches.size())
                 invalidNumber();
             else if (remove <= branches.size() && remove > 0)
@@ -268,6 +287,7 @@ public:
             cout << endl
                  << "Please enter the number of the movie that you want to remove..." << endl;
             cin >> remove;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
             if (remove < 1 || remove > movies.size())
                 invalidNumber();
             else if (remove <= movies.size() && remove > 0)
@@ -287,13 +307,32 @@ public:
     {
         return branches[index];
     }
-    int moviesCount()
+    int moviesCount() const
     {
         return movies.size();
     }
-    int branchesCount()
+    int branchesCount() const
     {
         return branches.size();
+    }
+    void clearMovies()
+    {
+        movies.clear();
+    }
+
+    void clearBranches()
+    {
+        branches.clear();
+    }
+
+    void addMovie(const Movie &movie)
+    {
+        movies.push_back(movie);
+    }
+
+    void addBranch(const Branch &branch)
+    {
+        branches.push_back(branch);
     }
 
 private:
@@ -316,6 +355,7 @@ class Reservation
 {
 public:
     Reservation(int price = 10) : price(price) {}
+    friend class Database;
     void chooseMovie()
     {
         system("cls");
@@ -326,6 +366,7 @@ public:
             appCinema.displayMovies();
             cout << "Please enter the number of the movie that you want to choose..." << endl;
             cin >> n;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
             if (n < 1 || n > appCinema.moviesCount())
                 invalidNumber();
             else
@@ -344,6 +385,7 @@ public:
             appCinema.displayBranches();
             cout << "Please enter the number of the branch that you want to choose..." << endl;
             cin >> n;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
             if (n < 1 || n > appCinema.branchesCount())
                 invalidNumber();
             else
@@ -360,6 +402,7 @@ public:
         {
             cout << "1. Ordinary\n2. VIP\n";
             cin >> n;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
             if (n < 1 || n > 2)
                 invalidNumber();
             else
@@ -376,29 +419,52 @@ public:
             hall->displayTime();
             cout << "Please enter the number of the time that you want to choose..." << endl;
             cin >> n;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
             if (n < 1 || n > hall->timesCount())
                 invalidNumber();
             else
                 break;
         }
-        time = hall->getTime(n - 1);
+        time = &hall->getTime(n - 1);
     }
-    void chooseSeat()
+    bool chooseSeat()
     {
         system("cls");
         int n;
+        bool available = false;
+
+        for (int i = 0; i < time->seatsCount(); i++)
+        {
+            if (!time->getSeat(i).reserveStatus())
+            {
+                available = true;
+                break;
+            }
+        }
+        if (!available)
+        {
+            system("cls");
+            moveCursor(35, 11);
+            cout << "Unfortunately there is no seat available!" << endl;
+            Sleep(3000);
+            return false;
+        }
         while (true)
         {
             while (true)
             {
-                hall->displaySeats();
+                time->displaySeats();
                 cout << "Please enter the number of the seat that you want to choose..." << endl;
                 cin >> n;
-                if (n < 1 || n > hall->seatsCount())
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                if (n < 1 || n > time->seatsCount())
+                {
                     invalidNumber();
+                    continue;
+                }
                 break;
             }
-            seat = &hall->getSeat(n - 1);
+            seat = &time->getSeat(n - 1);
             if (seat->reserveStatus())
             {
                 system("cls");
@@ -411,11 +477,11 @@ public:
             break;
         }
         seat->reserve();
+        return true;
     }
     void enterName()
     {
         cout << "Please enter your first and last name: ";
-        cin.ignore();
         getline(cin, customerName);
     }
     void calculatePrice()
@@ -423,15 +489,43 @@ public:
         price *= hall->getPriceMultiplier();
         cout << "Total price: " << price << "$" << endl;
     }
+    void printTicket()
+    {
+        line();
+        cout << string(14, ' ') << "CINEMA TICKET" << endl;
+        line();
+        cout << "Customer's name  : " << customerName << endl;
+        cout << "Movie            : " << movie.getTitle() << endl;
+        cout << "Branch           : " << branch->getTitle() << endl;
+        cout << "Hall             : " << hall->getHallType() << endl;
+        cout << "Time             : " << time->getTime() << endl;
+        cout << "Seat             : " << seat->getSeats() << endl;
+        cout << "Price            : " << price << "$" << endl;
+        line();
+        cout << "Enjoy your movie!" << endl;
+        line();
+    }
     void reservingFlow()
     {
         chooseBranch();
         chooseMovie();
         chooseHall();
-        chooseTime();
-        chooseSeat();
+        while (true)
+        {
+            chooseTime();
+            if (chooseSeat())
+                break;
+            system("cls");
+            moveCursor(35, 11);
+            cout << "Please choose another time, this time is already full!" << endl;
+            Sleep(3000);
+        }
+
         enterName();
         calculatePrice();
+        Sleep(4000);
+        system("cls");
+        printTicket();
         Sleep(4000);
         system("cls");
         moveCursor(35, 11);
@@ -442,7 +536,7 @@ public:
 private:
     Movie movie;
     Seat *seat = nullptr;
-    ShowTime time;
+    ShowTime *time = nullptr;
     Branch *branch;
     Hall *hall = nullptr;
     string customerName;
@@ -493,6 +587,7 @@ User *loginPanel();
 
 int main()
 {
+    Database::load();
     currentUser = loginPanel();
     mainPanel();
 }
@@ -507,6 +602,7 @@ void mainPanel()
         moveCursor(1, 15);
         cout << "Please enter an action to do..." << endl;
         handleAction();
+        Database::save();
     }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -564,12 +660,12 @@ void reserve()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void moviesDetails()
 {
-    system("cls");
-    appCinema.displayMovies();
-    action = "";
-    cout << "If you want to add or remove a movie, please type 'add' or 'delete'... " << endl;
     while (true)
     {
+        system("cls");
+        appCinema.displayMovies();
+        action = "";
+        cout << "If you want to add or remove a movie, please type 'add' or 'delete'... " << endl;
         getline(cin, action);
         toLowerCase(action);
         if (navigationText(action))
@@ -591,12 +687,12 @@ void moviesDetails()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void branchesDetails()
 {
-    system("cls");
-    appCinema.displayBranches();
-    action = "";
-    cout << "If you want to add or remove a branch, please type 'add' or 'delete'... " << endl;
     while (true)
     {
+        system("cls");
+        appCinema.displayBranches();
+        action = "";
+        cout << "If you want to add or remove a branch, please type 'add' or 'delete'... " << endl;
         getline(cin, action);
         toLowerCase(action);
         navigationText(action);
@@ -622,6 +718,123 @@ void contactUs()
     moveCursor(35, 11);
     cout << "Please contact with youneshadi07@gmail.com, in email!" << endl;
     Sleep(5000);
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void Database::save()
+{
+    ofstream file("database.txt");
+
+    file << appCinema.moviesCount() << '\n';
+    for (int i = 0; i < appCinema.moviesCount(); i++)
+        file << appCinema.getMovie(i).getTitle() << '\n';
+
+    file << appCinema.branchesCount() << '\n';
+    for (int i = 0; i < appCinema.branchesCount(); i++)
+        file << appCinema.getBranch(i).getTitle() << '\n';
+
+    file << currentReserve.size() << '\n';
+    for (const auto &r : currentReserve)
+    {
+        file << r.customerName << '\n';
+        file << r.movie.getTitle() << '\n';
+        file << r.branch->getTitle() << '\n';
+        if (dynamic_cast<VIPHall *>(r.hall))
+            file << 1 << '\n';
+        else
+            file << 0 << '\n';
+        file << r.time->getTime() << '\n';
+        file << r.price << '\n';
+        file << r.seat->getSeats() << '\n';
+    }
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void Database::load()
+{
+    ifstream file("database.txt");
+
+    if (!file)
+        return;
+
+    appCinema.clearMovies();
+    appCinema.clearBranches();
+    currentReserve.clear();
+
+    int count;
+    string text;
+
+    file >> count;
+    file.ignore();
+    for (int i = 0; i < count; i++)
+    {
+        getline(file, text);
+        appCinema.addMovie(Movie(text));
+    }
+
+    file >> count;
+    file.ignore();
+    for (int i = 0; i < count; i++)
+    {
+        getline(file, text);
+        appCinema.addBranch(Branch(text));
+    }
+
+    file >> count;
+    file.ignore();
+    for (int i = 0; i < count; i++)
+    {
+        Reservation r;
+
+        string movieTitle;
+        string branchTitle;
+        string timeText;
+        int hallIndex;
+        int seatNumber;
+
+        getline(file, r.customerName);
+        getline(file, movieTitle);
+        getline(file, branchTitle);
+        file >> hallIndex;
+        file.ignore();
+        getline(file, timeText);
+        file >> r.price;
+        file.ignore();
+        file >> seatNumber;
+        file.ignore();
+
+        for (int j = 0; j < appCinema.moviesCount(); j++)
+        {
+            if (appCinema.getMovie(j).getTitle() == movieTitle)
+            {
+                r.movie = appCinema.getMovie(j);
+                break;
+            }
+        }
+
+        for (int j = 0; j < appCinema.branchesCount(); j++)
+        {
+            if (appCinema.getBranch(j).getTitle() == branchTitle)
+            {
+                r.branch = &appCinema.getBranch(j);
+                break;
+            }
+        }
+        if (!r.branch)
+        {
+            continue;
+        }
+        r.hall = r.branch->getHall(hallIndex);
+        for (int k = 0; k < r.hall->timesCount(); k++)
+        {
+            if (r.hall->getTime(k).getTime() == timeText)
+            {
+                r.time = &r.hall->getTime(k);
+                break;
+            }
+        }
+        r.seat = &r.time->getSeat(seatNumber - 1);
+        r.seat->reserve();
+        currentReserve.push_back(r);
+    }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 User *loginPanel()
@@ -710,11 +923,25 @@ void unknownError(string situation)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void invalidNumber()
 {
+    cin.clear();
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
     system("cls");
     moveCursor(35, 11);
     cout << "Please enter a valid number..." << endl;
     Sleep(3000);
     system("cls");
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void line()
+{
+    cout << endl;
+    for (int i = 1; i <= 41; i++)
+    {
+        cout << "=";
+        if (i == 41)
+            cout << endl;
+    }
+    cout << endl;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void invalid()
